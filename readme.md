@@ -88,6 +88,31 @@ options:
   --verbose             Print additional information to the console.
 ```
 
+## LLM Providers
+Graphusion supports OpenAI, Google Gemini, and Ollama (local) models. The CLI argument `--model` determines which
+backend is used:
+
+- Model names starting with `gemini` use the Google Gemini API and require `GOOGLE_API_KEY`.
+- Model names starting with `ollama:` use a local Ollama server (e.g., `ollama:llama3.2`, `ollama:mistral`).
+- All other model names default to the OpenAI API and require `OPENAI_API_KEY`.
+
+Set the respective key either as an environment variable or inside `private_config.json`. You only need to
+provide the key for the backend you plan to use.
+
+### Using Ollama (Local Models)
+To use Ollama for completely local inference without any API keys:
+
+1. Install Ollama from https://ollama.ai
+2. Pull a model: `ollama pull llama3.2` (or `mistral`, `qwen2.5`, etc.)
+3. Run the pipeline with the `ollama:` prefix:
+   ```
+   python main.py --model "ollama:llama3.2" --run_name "test" --dataset "test" ...
+   ```
+
+By default, Ollama is expected at `http://localhost:11434`. You can override this by:
+- Setting the `OLLAMA_BASE_URL` environment variable
+- Adding `"OLLAMA_BASE_URL": "http://your-host:port"` to `private_config.json`
+
 The output of the pipeline are the following files: 
 - `concept_abstracts`: The json file mapping the extracted concepts to their abstracts.
 - `step-02.jsonl`: The extracted triples in linewise JSON format.

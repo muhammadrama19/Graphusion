@@ -8,6 +8,46 @@ from step_01_concept_extraction import step_01_concept_extraction
 from step_02_triple_extraction import step_02_triple_extraction
 from step_03_fusion import step_03_fusion
 
+
+def configure_llm_api_keys(model_name: str) -> str:
+    """Ensure the correct vendor API key is available for the requested model."""
+    config = {}
+    if os.path.exists('private_config.json'):
+        try:
+            config = json.load(open('private_config.json', encoding='utf-8'))
+        except json.JSONDecodeError:
+            logging.warning("private_config.json exists but could not be parsed; falling back to env vars only")
+
+    lower_name = model_name.lower()
+    
+    # Determine provider based on model name
+    if lower_name.startswith("ollama:"):
+        provider = "ollama"
+        # Ollama runs locally, no API key needed
+        # Optionally set OLLAMA_BASE_URL from config
+        ollama_url = config.get("OLLAMA_BASE_URL")
+        if ollama_url:
+            os.environ["OLLAMA_BASE_URL"] = ollama_url
+        return provider
+    elif lower_name.startswith("gemini"):
+        provider = "google"
+        env_var = "GOOGLE_API_KEY"
+    else:
+        provider = "openai"
+        env_var = "OPENAI_API_KEY"
+    
+    fallback = config.get(env_var)
+    api_key = os.getenv(env_var) or fallback
+
+    if api_key is None:
+        raise RuntimeError(
+            f"{env_var} is required for the selected model ({model_name}). "
+            "Set it as an environment variable or add it to private_config.json."
+        )
+
+    os.environ[env_var] = api_key
+    return provider
+
 if __name__ == "__main__":
     argparse = ArgumentParser()
     argparse.add_argument("--run_name", type=str, default="test",
@@ -129,17 +169,18 @@ if __name__ == "__main__":
     FUSION_OUTPUT_FILE = f'output/{RUN_NAME}/step-03.jsonl'
 
     # Load the relation definitions
-    relation_def = json.load(open(RELATION_DEFINITIONS_FILE, 'r'))
+    relation_def = json.load(open(RELATION_DEFINITIONS_FILE, 'r', encoding='utf-8'))
     relation_types = list(relation_def.keys())
     relation_2_id = {v: k for k, v in enumerate(relation_types)}
     id_2_relation = {k: v for k, v in enumerate(relation_types)}
 
     # Configure API keys
-    os.environ["OPENAI_API_KEY"] = json.load(open('private_config.json'))['OPENAI_API_KEY']
+    provider = configure_llm_api_keys(MODEL_NAME)
 
     # init the LLM
     model = KnowledgeGraphLLM(model_name=MODEL_NAME,
-                              max_tokens=MAX_RESPONSE_TOKEN_LENGTH_CANDIDATE_TRIPLE_EXTRACTION)
+                              max_tokens=MAX_RESPONSE_TOKEN_LENGTH_CANDIDATE_TRIPLE_EXTRACTION,
+                              provider=provider)
 
     # --- Pipeline ---
     if args.input_json_file == "" and args.input_triple_file == "":
@@ -150,7 +191,7 @@ if __name__ == "__main__":
         for file in os.listdir(f'data/{args.dataset}/raw/'):
             if file.endswith('.txt'):
                 logging.info(f"Loading file: {file}")
-                with open(f'data/{args.dataset}/raw/{file}', 'r') as f:
+                with open(f'data/{args.dataset}/raw/{file}', 'r', encoding='utf-8', errors='ignore') as f:
                     for line in f:
                         texts.append(line)
 
@@ -162,7 +203,7 @@ if __name__ == "__main__":
                                    config=config)
 
     # Load the abstract data (either created in step 1 or provided as input)
-    data = json.load(open(CONCEPT_ABSTRACTS_OUTPUT_FILE, 'r'))
+    data = json.load(open(CONCEPT_ABSTRACTS_OUTPUT_FILE, 'r', encoding='utf-8'))
 
     if args.input_triple_file == "":
         step_02_triple_extraction(model=model,
