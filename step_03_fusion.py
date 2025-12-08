@@ -114,11 +114,29 @@ def step_03_fusion(model: any,
         # query the model
         response = model.invoke(prompt)
 
-        if response != "None":
-            response_json = json.loads(response)
-            for triple in response_json:
-                if triple['p'] not in list(relation_2_id.keys()):
+        if response != "None" and response:
+            try:
+                response_json = json.loads(response)
+                
+                # Handle case where response is not a list
+                if not isinstance(response_json, list):
+                    logging.warning(f"Concept '{candidate_concept}': Expected list, got {type(response_json).__name__}. Skipping.")
                     continue
-                output_stream.write(json.dumps(triple) + '\n')
+                
+                for triple in response_json:
+                    # Validate triple is a dictionary with required keys
+                    if not isinstance(triple, dict):
+                        logging.warning(f"Concept '{candidate_concept}': Triple is not a dict, got {type(triple).__name__}. Skipping.")
+                        continue
+                    if 'p' not in triple or 's' not in triple or 'o' not in triple:
+                        logging.warning(f"Concept '{candidate_concept}': Triple missing required keys (s, p, o). Skipping: {triple}")
+                        continue
+                    
+                    if triple['p'] not in list(relation_2_id.keys()):
+                        continue
+                    output_stream.write(json.dumps(triple) + '\n')
+            except json.JSONDecodeError as e:
+                logging.warning(f"Concept '{candidate_concept}': Failed to parse JSON response: {e}. Response: {response[:200]}...")
+                continue
     output_stream.close()
     logging.info("Step 2: Fusion completed.")
