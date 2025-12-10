@@ -42,17 +42,21 @@ def step_03_fusion(model: any,
     if 'annotated_graph_file' not in config:
         config['annotated_graph_file'] = ""
         logging.info(f"No annotated graph file provided. Proceeding without it.")
-    if 'prompt_fusion' not in config:
+    if 'prompt_fusion' not in config or not config['prompt_fusion']:
         config['prompt_fusion'] = "prompts/prompt_fusion.txt"
         logging.info(f"No prompt template for fusion provided. Using default prompt: "
                      f"{config['prompt_fusion']}")
+    
+    # Verify prompt file exists
+    if not os.path.exists(config['prompt_fusion']):
+        raise FileNotFoundError(f"Prompt file not found: {config['prompt_fusion']}")
 
     candidate_triples = []
     for line in open(input_file, 'r'):
         t = json.loads(line)
         candidate_triples.append((t['s'], t['p'], t['o']))
 
-    if config['refined_concepts_file'] is not None:
+    if config['refined_concepts_file'] is not None and config['refined_concepts_file'] != "":
         logging.info(
             f"Refined concepts specified. Loading concepts from {config['refined_concepts_file']}.")
         id_2_concept = {i: str(c['concept']) for i, c in
@@ -80,7 +84,7 @@ def step_03_fusion(model: any,
 
     # build the prerequisite-of graph
     prerequisite_of_triples = []
-    if os.path.exists(config['annotated_graph_file']):
+    if config['annotated_graph_file'] and config['annotated_graph_file'] != "" and os.path.exists(config['annotated_graph_file']):
         logging.info(f"Loading annotated graph from {config['annotated_graph_file']}.")
         with open(config['annotated_graph_file'], 'r') as f:
             for line in f:
@@ -88,7 +92,7 @@ def step_03_fusion(model: any,
                 prerequisite_of_triples.append((str(s), str(p), str(o)))
     else:
         logging.info(
-            f"No annotated graph found at {config['annotated_graph_file']}. Proceeding without it.")
+            f"No annotated graph provided or file not found. Proceeding without it.")
 
     prerequisite_of_graph = get_nx_graph(prerequisite_of_triples, concept_2_id, relation_2_id)
 

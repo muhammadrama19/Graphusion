@@ -1,4 +1,5 @@
 import json
+import os
 from langchain_core.prompts import ChatPromptTemplate
 from collections import Counter
 
@@ -26,13 +27,17 @@ def step_02_triple_extraction(model: any,
     :return: None
     """
 
-    if 'prompt_tpextraction' not in config:
+    if 'prompt_tpextraction' not in config or not config['prompt_tpextraction']:
         config['prompt_tpextraction'] = "prompts/prompt_tpextraction.txt"
         logging.info(f"No prompt template for triple extraction provided. "
                      f"Using default prompt: {config['prompt_tpextraction']}")
     if 'max_input_char' not in config:
         config['max_input_char'] = 10000
         logging.info(f"No max_input_char provided. Using default value: {config['max_input_char']}")
+    
+    # Verify prompt file exists
+    if not os.path.exists(config['prompt_tpextraction']):
+        raise FileNotFoundError(f"Prompt file not found: {config['prompt_tpextraction']}")
 
 
     logging.info("Step 2: Starting candidate triple extraction.")

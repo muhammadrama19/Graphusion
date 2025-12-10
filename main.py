@@ -99,15 +99,15 @@ if __name__ == "__main__":
                                "The file should be a tsv file, each row should look like: "
                                "'concept id | concept")
     argparse.add_argument('--refined_concepts_file', type=str,
-                          default="True",
+                          default="",
                           help='In step 2 (candidate triple extraction) many new concepts might be '
                                'added. Instead of using these, concepts can be provided through this '
                                'parameter. Specify the path to a file with refined concepts '
                                'of the graph. The file should be a tsv file, each row should look like: '
                                '"concept id | concept name"')
     argparse.add_argument("--annotated_graph_file", type=str,
-                          default="data/prerequisite_of_graph.tsv",
-                          help="Path to the annotated graph.")
+                          default="",
+                          help="Path to the annotated graph (optional). Used in Step 3 for fusion.")
 
     # language settings
     argparse.add_argument('--language', type=str, default='english',
