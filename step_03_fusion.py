@@ -68,6 +68,14 @@ def step_03_fusion(model: any,
             f'No refined concepts specified. Randomly selected concepts: {", ".join(concepts[:100])}')
         id_2_concept = {i: c for i, c in enumerate(concepts)}
 
+    # Apply sampling if specified
+    sample_size = config.get('sample_size', 0)
+    if sample_size > 0:
+        original_size = len(id_2_concept)
+        sampled_items = list(id_2_concept.items())[:sample_size]
+        id_2_concept = dict(sampled_items)
+        logging.info(f"SAMPLING MODE: Reduced concepts from {original_size} to {len(id_2_concept)} (--sample_size={sample_size})")
+
     concept_2_id = {v: k for k, v in id_2_concept.items()}
 
     # build the prerequisite-of graph

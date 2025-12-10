@@ -117,6 +117,11 @@ if __name__ == "__main__":
     argparse.add_argument('--verbose', action='store_true',
                           help='Print additional information to the console.')
 
+    # sampling for resource-limited environments
+    argparse.add_argument('--sample_size', type=int, default=0,
+                          help='Limit processing to N items per step for testing with limited resources. '
+                               '0 = no limit (process all). Recommended: 10-20 for quick tests.')
+
     # Parse the arguments
     args = argparse.parse_args()
     VERBOSE = args.verbose
@@ -195,6 +200,12 @@ if __name__ == "__main__":
                     for line in f:
                         texts.append(line)
 
+        # Apply sampling to raw texts if specified (for Step 1)
+        if args.sample_size > 0:
+            original_size = len(texts)
+            texts = texts[:args.sample_size * 10]  # Use 10x sample_size for texts to get enough concepts
+            logging.info(f"SAMPLING MODE: Reduced raw texts from {original_size} to {len(texts)} (--sample_size={args.sample_size})")
+
         # extract concepts
         step_01_concept_extraction(texts=texts,
                                    concept_extraction_output_file=CONCEPT_EXTRACTION_OUTPUT_FILE,
@@ -204,6 +215,14 @@ if __name__ == "__main__":
 
     # Load the abstract data (either created in step 1 or provided as input)
     data = json.load(open(CONCEPT_ABSTRACTS_OUTPUT_FILE, 'r', encoding='utf-8'))
+
+    # Apply sampling if specified
+    if args.sample_size > 0:
+        original_size = len(data)
+        # Sample the data dictionary
+        sampled_keys = list(data.keys())[:args.sample_size]
+        data = {k: data[k] for k in sampled_keys}
+        logging.info(f"SAMPLING MODE: Reduced data from {original_size} to {len(data)} concepts (--sample_size={args.sample_size})")
 
     if args.input_triple_file == "":
         step_02_triple_extraction(model=model,

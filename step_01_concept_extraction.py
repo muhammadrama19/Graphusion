@@ -132,6 +132,13 @@ def step_01_concept_extraction(texts: list[str],
 
     df_concepts = df_concepts.drop_duplicates(subset="concept", keep="first")
 
+    # Apply sampling if specified (limit concepts to process)
+    sample_size = config.get('sample_size', 0)
+    if sample_size > 0:
+        original_size = len(df_concepts)
+        df_concepts = df_concepts.head(sample_size)
+        logging.info(f"SAMPLING MODE (Step 1): Reduced concepts from {original_size} to {len(df_concepts)} (--sample_size={sample_size})")
+
     # reduce the text dataset to only texts containing the concepts
     def filter_abstracts_by_term(term, abstracts, threshold=70):
         filtered_abstracts = []

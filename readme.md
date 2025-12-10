@@ -52,6 +52,7 @@ usage: main.py [-h] [--run_name RUN_NAME] --dataset DATASET --relation_definitio
                [--input_triple_file INPUT_TRIPLE_FILE] [--model MODEL] [--max_resp_tok MAX_RESP_TOK] [--max_input_char MAX_INPUT_CHAR]
                [--prompt_tpextraction PROMPT_TPEXTRACTION] [--prompt_fusion PROMPT_FUSION] [--gold_concept_file GOLD_CONCEPT_FILE]
                [--refined_concepts_file REFINED_CONCEPTS_FILE] [--annotated_graph_file ANNOTATED_GRAPH_FILE] [--language LANGUAGE] [--verbose]
+               [--sample_size SAMPLE_SIZE]
 
 options:
   -h, --help            show this help message and exit
@@ -77,6 +78,8 @@ options:
                         Path to the prompt template for step 1.
   --prompt_fusion PROMPT_FUSION
                         Path to the prompt template for fusion.
+  --sample_size SAMPLE_SIZE
+                        Limit processing to N items per step for testing with limited resources. 0 = no limit (process all). Recommended: 10-20 for quick tests.
   --gold_concept_file GOLD_CONCEPT_FILE
                         Path to a file with concepts that are provided by experts. The file should be a tsv file, each row should look like: 'concept id | concept
   --refined_concepts_file REFINED_CONCEPTS_FILE
@@ -125,6 +128,28 @@ To run the full pipeline on a small sample (`test`) dataset, call:
 
 To reproduce the Graphusion results on the ACL (`nlp) dataset, call:
 `python main.py --run_name "acl" --dataset "nlp" --relation_definitions_file "data/nlp/relation_types.json" --gold_concept_file "data/nlp/gold_concepts.tsv" --refined_concepts_file "data/nlp/refined_concepts.tsv"`
+
+### Quick Test with Limited Resources
+If you have limited computational resources (e.g., small GPU, free Colab tier), use `--sample_size` to process only a subset of the data:
+
+```bash
+# Process only 10 concepts (quick test ~2-5 minutes)
+python main.py --run_name "quick_test" --dataset "test" \
+    --relation_definitions_file "data/test/relation_types.json" \
+    --model "ollama:llama3.2:1b" \
+    --sample_size 10
+
+# Process 20 concepts (more thorough test ~5-10 minutes)
+python main.py --run_name "sample_test" --dataset "test" \
+    --relation_definitions_file "data/test/relation_types.json" \
+    --model "gemini-1.5-flash" \
+    --sample_size 20
+```
+
+This limits:
+- **Step 1**: Raw texts to `sample_size * 10` (to extract enough concepts)
+- **Step 2**: Concepts to process to `sample_size`
+- **Step 3**: Concepts to fuse to `sample_size`
 
 ## Credits
 This implementation is based on the code of Rui Yang and Irene Li. Moritz Blum extended their code and implemented this pipeline.

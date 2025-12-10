@@ -35,7 +35,15 @@ def step_02_triple_extraction(model: any,
         logging.info(f"No max_input_char provided. Using default value: {config['max_input_char']}")
 
 
-    logging.info("Step 1: Starting candidate triple extraction.")
+    logging.info("Step 2: Starting candidate triple extraction.")
+    
+    # Log sampling info if applicable
+    sample_size = config.get('sample_size', 0)
+    if sample_size > 0:
+        logging.info(f"SAMPLING MODE (Step 2): Processing {len(data)} concepts (--sample_size={sample_size})")
+    else:
+        logging.info(f"Processing {len(data)} concepts")
+    
     output_stream = open(output_file, 'w')
 
     # initialize the prompt template
@@ -93,6 +101,6 @@ def step_02_triple_extraction(model: any,
 
     output_stream.close()
 
-    logging.info("Step 1: Candidate Triple Extraction completed.")
+    logging.info("Step 2: Candidate Triple Extraction completed.")
     logging.info(f"Num extracted candidate triples: {len(extracted_relations)}")
     logging.debug(f"Extracted candidate triples by relaton type: {Counter(extracted_relations)}")
